@@ -13,7 +13,7 @@ from google.genai import types
 
 # Load Gemini model securely using environment variables
 model = Gemini(
-    model="gemini-2.5-flash",
+    model="gemini-2.5-flash-lite",
 )
 
 # Mock databases for user calendar
