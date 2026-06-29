@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: semgrep
+        name: Semgrep Security Scan
+        entry: python semgrep_windows.py
+        language: system
+        types: [python]
