@@ -1,94 +1,97 @@
-# capstone-project
+# SecureLifePlanner: A PII-Safe Personal Concierge & Workspace Organizer
 
-Simple ReAct agent
-Agent generated with `agents-cli` version `0.6.1`
+**SecureLifePlanner** is a secure, personal concierge AI assistant built using the Google **Agent Development Kit (ADK) 2.0** for the Kaggle Capstone Project under the **Concierge Agents** track. 
 
-## Project Structure
-
-```
-capstone-project/
-├── app/         # Core agent code
-│   ├── agent.py               # Main agent logic
-│   ├── fast_api_app.py        # FastAPI Backend server
-│   └── app_utils/             # App utilities and helpers
-├── tests/                     # Unit, integration, and load tests
-├── GEMINI.md                  # AI-assisted development guide
-└── pyproject.toml             # Project dependencies
-```
-
-> 💡 **Tip:** Use [Antigravity CLI](https://antigravity.google/) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
-
-## Requirements
-
-Before you begin, ensure you have:
-- **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
-- **agents-cli**: Agents CLI - Install with `uv tool install google-agents-cli`
-- **Google Cloud SDK**: For GCP services - [Install](https://cloud.google.com/sdk/docs/install)
-
-
-## Quick Start
-
-Install `agents-cli` and its skills if not already installed:
-
-```bash
-uvx google-agents-cli setup
-```
-
-Install required packages:
-
-```bash
-agents-cli install
-```
-
-Test the agent with a local web server:
-
-```bash
-agents-cli playground
-```
-
-You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`.
-
-## Commands
-
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `agents-cli install` | Install dependencies using uv                                                         |
-| `agents-cli playground` | Launch local development environment                                                  |
-| `agents-cli lint`    | Run code quality checks                                                               |
-| `agents-cli eval`    | Evaluate agent behavior (generate, grade, analyze, and more — see `agents-cli eval --help`) |
-| `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        |
-| `agents-cli deploy`  | Deploy agent to Agent Runtime                                                                |
-| `agents-cli publish gemini-enterprise` | Register deployed agent to Gemini Enterprise                    || [A2A Inspector](https://github.com/a2aproject/a2a-inspector) | Launch A2A Protocol Inspector                                                        |
-
-## 🛠️ Project Management
-
-| Command | What It Does |
-|---------|--------------|
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure |
-| `agents-cli infra cicd` | One-command setup of entire CI/CD pipeline + infrastructure |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
+It organizes everyday tasks and coordinates calendars while enforcing strict data filtering boundaries to protect sensitive personal identifiable information (PII) before any outbound email or log leaves the system.
 
 ---
 
-## Development
+## 🚀 Key Features
 
-Edit your agent logic in `app/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
+*   **Daily Agenda Organizer:** Reads, structures, and updates the user's daily calendar events.
+*   **Smart Workspace Coordination:** Books slots and drafts email updates to coordinate tasks with others.
+*   **Automated PII Masking:** Scans inputs and dynamically redacts phone numbers, street addresses, and sensitive identification numbers into `[REDACTED]` prior to external transmission.
+*   **Static Scanning Gating:** Custom git pre-commit hooks that actively scan the codebase to prevent credential leakage.
+*   **PreToolUse Interception:** Antigravity hooks that intercept command-line invocations to block destructive actions.
 
-## Deployment
+---
 
-```bash
-gcloud config set project <your-project-id>
-agents-cli deploy
+## 📐 Multi-Agent Architecture (ADK 2.0)
+
+SecureLifePlanner splits reasoning and execution using a collaborative agent graph:
+*   **`life_planner_agent`**: Actively chats with the user, maps their requirements, lists events, and schedules new slots using calendar tools.
+*   **`secure_workspace_agent`**: Interacts with email and file tools. All outbound emails must be dispatched via the `send_email_concierge` tool, which enforces the `pii-leak-prevention` skill to sanitize content before sending.
+
+```
+                  ┌────────────────────────┐
+                  │          USER          │
+                  └───────────┬────────────┘
+                              │ Prompt
+                              ▼
+                  ┌────────────────────────┐
+                  │   life_planner_agent   │◄───► [Calendar Tools]
+                  └───────────┬────────────┘
+                              │ Delegated Task
+                              ▼
+                  ┌────────────────────────┐
+                  │ secure_workspace_agent │
+                  └───────────┬────────────┘
+                              │
+                              ▼
+                  ┌────────────────────────┐
+                  │  pii-leak-prevention   │ (Skill)
+                  └───────────┬────────────┘
+                              │
+                              ▼
+                  ┌────────────────────────┐
+                  │  send_email_concierge  │ (PII Masked & Sent)
+                  └────────────────────────┘
 ```
 
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
+---
 
-## Observability
+## 🔒 Security Boundaries & Guardrails
 
-Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
+This project shifts security left to the local development environment:
 
-## A2A Inspector
+1.  **PII Leak Prevention Skill:** Detailed in `.agents/skills/pii-leak-prevention/SKILL.md`, it guides the LLM to identify and redact sensitive data.
+2.  **Antigravity Command Hook:** Configured in `.agents/hooks.json` to trigger `.agents/scripts/validate_tool_call.py` to prevent execution of destructive shell actions.
+3.  **Git Pre-commit Semgrep SCAN:** Configured in `.pre-commit-config.yaml` to run `semgrep_windows.py` which blocks any git commits containing hardcoded Google API credentials.
 
-This agent supports the [A2A Protocol](https://a2a-protocol.org/). Use the [A2A Inspector](https://github.com/a2aproject/a2a-inspector) to test interoperability.
-See the [A2A Inspector docs](https://github.com/a2aproject/a2a-inspector) for details.
+---
+
+## 🧪 Automated Tests
+
+The security boundaries are validated with a Pytest suite:
+```bash
+uv run pytest tests/test_agent.py
+```
+This tests:
+*   Redaction of diverse phone number formats.
+*   Redaction of physical street addresses.
+*   Automatic email payload sanitization before dispatch.
+
+---
+
+## 🛠️ How to Run
+
+### Prerequisites
+*   [uv](https://docs.astral.sh/uv/) (Fast Python package manager)
+*   [google-agents-cli](https://pypi.org/project/google-agents-cli/)
+
+### Setup
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    agents-cli install
+    ```
+3.  Configure environment variables with your Gemini API key:
+    ```bash
+    export GEMINI_API_KEY="your-api-key-here"
+    export GOOGLE_GENAI_USE_VERTEXAI="False"
+    ```
+4.  Launch the playground to interact with the agent:
+    ```bash
+    agents-cli playground
+    ```
+    Access the UI at: `http://127.0.0.1:8080/dev-ui/?app=app`
