@@ -78,17 +78,6 @@ def send_email_concierge(recipient: str, subject: str, body: str) -> str:
     return f"Email sent successfully to {recipient} with subject '{subject}'. Body: {sanitized_body}"
 
 # Collaborative multi-agent setup
-life_planner_agent = Agent(
-    name="life_planner_agent",
-    model=model,
-    instruction=(
-        "You are a personal concierge life planner. Help users organize their day, plan events, "
-        "and draft emails. Coordinate with the secure_workspace_agent when the user wants to list "
-        "their calendar, add events, or send emails."
-    ),
-    tools=[list_calendar, add_event],
-)
-
 secure_workspace_agent = Agent(
     name="secure_workspace_agent",
     model=model,
@@ -98,6 +87,18 @@ secure_workspace_agent = Agent(
         "PII redaction before dispatch."
     ),
     tools=[send_email_concierge],
+)
+
+life_planner_agent = Agent(
+    name="life_planner_agent",
+    model=model,
+    instruction=(
+        "You are a personal concierge life planner. Help users organize their day, plan events, "
+        "and draft emails. When the user wants to send an email, you MUST delegate the task "
+        "to the secure_workspace_agent."
+    ),
+    tools=[list_calendar, add_event],
+    sub_agents=[secure_workspace_agent],
 )
 
 app = App(
